@@ -4,6 +4,7 @@ A bridge between norlab_icp_mapper and ROS.
 ## Node Parameters
 |             Name             |                                                    Description                                                    |          Possible values         |                       Default Value                        |
 |:----------------------------:|:-----------------------------------------------------------------------------------------------------------:|:--------------------------------:|:----------------------------------------------------------:|
+| map_frame                    | Frame used for map.                                                                                         | Any string                       | "map"                                                      |
 | odom_frame                   | Frame used for odometry.                                                                                    | Any string                       | "odom"                                                     |
 | robot_frame                  | Frame centered on the robot.                                                                                | Any string                       | "base_link"                                                |
 | initial_map_file_name        | Path of the file from which the initial map is loaded.                                                      | Any file path                    | ""                                                         |
