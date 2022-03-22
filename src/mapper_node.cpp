@@ -93,6 +93,12 @@ PM::TransformationParameters findTransform(const std::string& sourceFrame, const
 	return PointMatcher_ROS::rosTfToPointMatcherTransformation<float>(tf, transformDimension);
 }
 
+void publishMapTf(PM::TransformationParameters odomToMap, const ros::Time& stamp)
+{
+	geometry_msgs::TransformStamped odomToMapTf = PointMatcher_ROS::pointMatcherTransformationToRosTf<float>(odomToMap, params->mapFrame, params->odomFrame, stamp);
+	tfBroadcaster->sendTransform(odomToMapTf);
+}
+
 void gotInput(const PM::DataPoints& input, const std::string& sensorFrame, const ros::Time& timeStamp)
 {
 	try
@@ -112,6 +118,7 @@ void gotInput(const PM::DataPoints& input, const std::string& sensorFrame, const
 
 		mapTfLock.lock();
 		odomToMap = transformation->correctParameters(sensorToMapAfterUpdate * sensorToOdom.inverse());
+		publishMapTf(odomToMap, timeStamp);
 		mapTfLock.unlock();
 
 		PM::TransformationParameters robotToSensor = findTransform(params->robotFrame, sensorFrame, timeStamp, input.getHomogeneousDim());
@@ -258,6 +265,11 @@ void mapPublisherLoop()
 
 void mapTfPublisherLoop()
 {
+	if (params->mapTfPublishRate == 0.0)
+	{
+		ROS_INFO("Regular map transform publishing disabled.");
+		return;
+	}
 	ros::Rate publishRate(params->mapTfPublishRate);
 
 	while(ros::ok())
@@ -266,10 +278,7 @@ void mapTfPublisherLoop()
 		PM::TransformationParameters currentOdomToMap = odomToMap;
 		mapTfLock.unlock();
 
-		geometry_msgs::TransformStamped currentOdomToMapTf = PointMatcher_ROS::pointMatcherTransformationToRosTf<float>(currentOdomToMap, params->mapFrame,
-																														params->odomFrame,
-																														ros::Time::now());
-		tfBroadcaster->sendTransform(currentOdomToMapTf);
+		publishMapTf(currentOdomToMap, ros::Time::now());
 
 		publishRate.sleep();
 	}

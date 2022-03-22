@@ -127,7 +127,7 @@ void NodeParameters::validateParameters() const
 		throw std::runtime_error("Invalid map publish rate: " + std::to_string(mapPublishRate));
 	}
 
-	if(mapTfPublishRate <= 0)
+	if(mapTfPublishRate < 0.0)
 	{
 		throw std::runtime_error("Invalid map tf publish rate: " + std::to_string(mapTfPublishRate));
 	}
