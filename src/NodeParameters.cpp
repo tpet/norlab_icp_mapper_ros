@@ -10,6 +10,7 @@ NodeParameters::NodeParameters(ros::NodeHandle privateNodeHandle)
 
 void NodeParameters::retrieveParameters(const ros::NodeHandle& nodeHandle)
 {
+	nodeHandle.param<std::string>("map_frame", mapFrame, "map");
 	nodeHandle.param<std::string>("odom_frame", odomFrame, "odom");
 	nodeHandle.param<std::string>("robot_frame", robotFrame, "base_link");
 	nodeHandle.param<std::string>("initial_map_file_name", initialMapFileName, "");

@@ -118,7 +118,7 @@ void gotInput(const PM::DataPoints& input, const std::string& sensorFrame, const
 		PM::TransformationParameters robotToMap = sensorToMapAfterUpdate * robotToSensor;
 
 		robotTrajectory->addPoint(robotToMap.topRightCorner(input.getEuclideanDim(), 1));
-		nav_msgs::Odometry odomMsgOut = PointMatcher_ROS::pointMatcherTransformationToOdomMsg<float>(robotToMap, "map", params->robotFrame, timeStamp);
+		nav_msgs::Odometry odomMsgOut = PointMatcher_ROS::pointMatcherTransformationToOdomMsg<float>(robotToMap, params->mapFrame, params->robotFrame, timeStamp);
 
 		if(!previousTimeStamp.isZero())
 		{
@@ -248,7 +248,7 @@ void mapPublisherLoop()
 	{
 		if(mapper->getNewLocalMap(newMap))
 		{
-			sensor_msgs::PointCloud2 mapMsgOut = PointMatcher_ROS::pointMatcherCloudToRosMsg<float>(newMap, "map", ros::Time::now());
+			sensor_msgs::PointCloud2 mapMsgOut = PointMatcher_ROS::pointMatcherCloudToRosMsg<float>(newMap, params->mapFrame, ros::Time::now());
 			mapPublisher.publish(mapMsgOut);
 		}
 
@@ -266,7 +266,7 @@ void mapTfPublisherLoop()
 		PM::TransformationParameters currentOdomToMap = odomToMap;
 		mapTfLock.unlock();
 
-		geometry_msgs::TransformStamped currentOdomToMapTf = PointMatcher_ROS::pointMatcherTransformationToRosTf<float>(currentOdomToMap, "map",
+		geometry_msgs::TransformStamped currentOdomToMapTf = PointMatcher_ROS::pointMatcherTransformationToRosTf<float>(currentOdomToMap, params->mapFrame,
 																														params->odomFrame,
 																														ros::Time::now());
 		tfBroadcaster->sendTransform(currentOdomToMapTf);

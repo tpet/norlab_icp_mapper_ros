@@ -15,6 +15,7 @@ private:
 	void parseInitialRobotPose();
 
 public:
+	std::string mapFrame;
 	std::string odomFrame;
 	std::string robotFrame;
 	std::string initialMapFileName;
