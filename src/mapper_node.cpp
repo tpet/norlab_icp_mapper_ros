@@ -20,6 +20,7 @@ std::shared_ptr<PM::Transformation> transformation;
 std::unique_ptr<norlab_icp_mapper::Mapper> mapper;
 std::unique_ptr<Trajectory> robotTrajectory;
 PM::TransformationParameters odomToMap;
+ros::Publisher filteredPublisher;
 ros::Publisher mapPublisher;
 ros::Publisher odomPublisher;
 std::unique_ptr<tf2_ros::Buffer> tfBuffer;
@@ -113,13 +114,20 @@ void gotInput(const PM::DataPoints& input, const std::string& sensorFrame, const
 			hasToSetRobotPose = false;
 		}
 
-		mapper->processInput(input, sensorToMapBeforeUpdate, std::chrono::time_point<std::chrono::steady_clock>(std::chrono::nanoseconds(timeStamp.toNSec())));
+		PM::DataPoints filteredInputInSensorFrame;
+		mapper->processInput(input, sensorToMapBeforeUpdate, std::chrono::time_point<std::chrono::steady_clock>(std::chrono::nanoseconds(timeStamp.toNSec())), filteredInputInSensorFrame);
 		const PM::TransformationParameters& sensorToMapAfterUpdate = mapper->getPose();
 
 		mapTfLock.lock();
 		odomToMap = transformation->correctParameters(sensorToMapAfterUpdate * sensorToOdom.inverse());
 		publishMapTf(odomToMap, timeStamp);
 		mapTfLock.unlock();
+
+		if(filteredPublisher.getNumSubscribers() > 0)
+		{
+			sensor_msgs::PointCloud2 filteredMsgOut = PointMatcher_ROS::pointMatcherCloudToRosMsg<float>(filteredInputInSensorFrame, sensorFrame, timeStamp);
+			filteredPublisher.publish(filteredMsgOut);
+		}
 
 		PM::TransformationParameters robotToSensor = findTransform(params->robotFrame, sensorFrame, timeStamp, input.getHomogeneousDim());
 		PM::TransformationParameters robotToMap = sensorToMapAfterUpdate * robotToSensor;
@@ -329,6 +337,7 @@ int main(int argc, char** argv)
 	tf2_ros::TransformListener tfListener(*tfBuffer);
 	tfBroadcaster = std::unique_ptr<tf2_ros::TransformBroadcaster>(new tf2_ros::TransformBroadcaster);
 
+	filteredPublisher = n.advertise<sensor_msgs::PointCloud2>("filtered_points", 2, true);
 	mapPublisher = n.advertise<sensor_msgs::PointCloud2>("map", 2, true);
 	odomPublisher = n.advertise<nav_msgs::Odometry>("icp_odom", 50, true);
 
